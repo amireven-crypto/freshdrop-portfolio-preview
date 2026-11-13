@@ -72,7 +72,7 @@ h1,h2,h3{font-family:var(--display);font-weight:700;color:var(--ink);letter-spac
 /* sections */
 .sec{padding:clamp(72px,10vw,130px) 0}
 .head{text-align:center;max-width:780px;margin:0 auto clamp(40px,6vw,70px)}
-.head h2,.contact h2{font-size:clamp(36px,5.6vw,68px)}
+.head h2,.contact h2{font-size:clamp(36px,5.6vw,68px);text-wrap:balance}
 .sub{color:var(--muted);font-size:clamp(16px,1.8vw,19px);margin:18px auto 0;max-width:600px}
 
 /* projects */
@@ -166,7 +166,8 @@ h1,h2,h3{font-family:var(--display);font-weight:700;color:var(--ink);letter-spac
    and project "windows" stay dark like real screens. */
 @media (prefers-color-scheme: light){
   :root{--bg:#F7F7FB;--bg2:#FFFFFF;--card:rgba(255,255,255,.78);--line:rgba(20,20,50,.10);--line2:rgba(20,20,50,.18);--text:#2A2A44;--muted:#55557A;--ink:#121230}
-  .eyebrow{color:#067C8C}
+  .eyebrow{color:#05606C}
+  .contact .eyebrow{color:#05606C}
   .orb{opacity:.18}.o1{opacity:.16}.o2{opacity:.16}.o3{opacity:.12}
   .grid{background-image:linear-gradient(rgba(20,20,50,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(20,20,50,.05) 1px,transparent 1px)}
   .nav{background:rgba(247,247,251,.78)}
