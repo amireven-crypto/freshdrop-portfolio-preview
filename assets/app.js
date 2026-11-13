@@ -1,6 +1,7 @@
 /* FreshDrop – demo shop (client-side only, no real orders) */
 const LOGO = `<span class="lw"><span class="wm">Fresh<b>Dr</b><svg class="pdrop" viewBox="0 0 24 30" aria-hidden="true"><defs><linearGradient id="fdg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0FB5C9"/><stop offset="1" stop-color="#7C4DFF"/></linearGradient></defs><path fill="url(#fdg)" fill-rule="evenodd" d="M12 1C12 1 1.5 11.6 1.5 18.2a10.5 10.5 0 0 0 21 0C22.5 11.6 12 1 12 1ZM12 11.2C12 11.2 7.1 16.1 7.1 19.2a4.9 4.9 0 0 0 9.8 0C16.9 16.1 12 11.2 12 11.2Z"/><path d="M5.2 19.5a7 7 0 0 0 2.6 5.2" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.4" stroke-linecap="round"/></svg><b>p</b></span><small class="tagline">Everyday essentials</small></span>`;
-const PH = t => `<span class="ph">[${t}]</span>`;
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const PH = t => `<span class="ph">[${esc(t)}]</span>`;
 const eur = n => '€' + (Number.isFinite(n) ? n : 0).toFixed(2);
 
 /* ---------- SVG illustrations (original, royalty-free) ---------- */
@@ -88,7 +89,7 @@ const drawings = {
 let artN = 0;
 function art(kind, {bg = true, label, hidden = false} = {}) {
   const id = 'g' + (artN++);
-  return `<svg viewBox="0 0 400 400" ${hidden ? 'aria-hidden="true" focusable="false"' : `role="img" aria-label="${label || 'Product illustration'}"`} xmlns="http://www.w3.org/2000/svg">
+  return `<svg viewBox="0 0 400 400" ${hidden ? 'aria-hidden="true" focusable="false"' : `role="img" aria-label="${esc(label || 'Product illustration')}"`} xmlns="http://www.w3.org/2000/svg">
    ${bg ? `<defs><radialGradient id="${id}" cx="70%" cy="25%" r="80%"><stop offset="0" stop-color="#E9E0FF"/><stop offset=".55" stop-color="#F7F4FF"/><stop offset="1" stop-color="#FFFFFF"/></radialGradient></defs>
    <rect width="400" height="400" fill="url(#${id})"/><circle cx="200" cy="210" r="150" fill="none" stroke="#DDD3FF" stroke-width="2"/>` : ''}
    ${drawings[kind] || drawings.generic}</svg>`;
@@ -96,9 +97,21 @@ function art(kind, {bg = true, label, hidden = false} = {}) {
 
 /* Photo with SVG fallback: the SVG sits underneath; if the photo fails it is removed */
 function pic(p, cls = '', eager = false) {
-  const img = p.noimg ? '' : `<img src="assets/img/${p.id}.webp" alt="${p.name}" width="800" height="800" ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async" onerror="var s=this.previousElementSibling;if(s){s.removeAttribute('aria-hidden');s.setAttribute('role','img');s.setAttribute('aria-label',this.alt)}this.remove()">`;
+  const img = p.noimg ? '' : `<img src="assets/img/${esc(p.id)}.webp" alt="${esc(p.name)}" width="800" height="800" ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async">`;
   return `<div class="pic ${cls}">${art(p.art, {label: p.name, hidden: !p.noimg})}${img}</div>`;
 }
+/* Broken product photos fall back to the drawing without an inline event handler. */
+document.addEventListener('error', e => {
+  const t = e.target;
+  if (!t || t.tagName !== 'IMG' || !t.closest || !t.closest('.pic')) return;
+  const s = t.previousElementSibling;
+  if (s && s.localName === 'svg') {
+    s.removeAttribute('aria-hidden');
+    s.setAttribute('role', 'img');
+    s.setAttribute('aria-label', t.getAttribute('alt') || 'Product illustration');
+  }
+  t.remove();
+}, true);
 
 /* ---------- Products ---------- */
 const PRODUCTS = [
@@ -652,20 +665,20 @@ function footer() {
 /* ---------- Components ---------- */
 function card(p, h = 'h3') {
   return `<article class="card">
-    <div class="thumb-wrap"><a class="thumb" href="product.html?id=${p.id}">${pic(p)}${p.badge ? `<span class="badge ${isB(p) ? 'alt' : ''}">${p.badge}</span>` : ''}${bSave(p) ? `<span class="save-pill on-card">${saveTxt(bSave(p))}</span>` : ''}</a>${p.variants ? `<a class="quick" href="product.html?id=${p.id}" tabindex="-1" aria-hidden="true">Choose options →</a>` : `<button type="button" class="quick" data-act="add" data-id="${p.id}" tabindex="-1" aria-hidden="true">+ Quick add · ${eur(p.price)}</button>`}</div>
-    <div class="body"><${h} class="ct"><a href="product.html?id=${p.id}">${isB(p) ? 'Bundle: ' : ''}${p.name}</a></${h}>
-      <p class="desc">${p.short}</p>${p.dims ? `<p class="dimline" title="${p.dims}">📏 ${p.dims}</p>` : ''}${p.variants ? `<p class="vhint">${vHint(p)} available</p>` : ''}
+    <div class="thumb-wrap"><a class="thumb" href="product.html?id=${esc(p.id)}">${pic(p)}${p.badge ? `<span class="badge ${isB(p) ? 'alt' : ''}">${esc(p.badge)}</span>` : ''}${bSave(p) ? `<span class="save-pill on-card">${saveTxt(bSave(p))}</span>` : ''}</a>${p.variants ? `<a class="quick" href="product.html?id=${esc(p.id)}" tabindex="-1" aria-hidden="true">Choose options →</a>` : `<button type="button" class="quick" data-act="add" data-id="${esc(p.id)}" tabindex="-1" aria-hidden="true">+ Quick add · ${eur(p.price)}</button>`}</div>
+    <div class="body"><${h} class="ct"><a href="product.html?id=${esc(p.id)}">${isB(p) ? 'Bundle: ' : ''}${esc(p.name)}</a></${h}>
+      <p class="desc">${esc(p.short)}</p>${p.dims ? `<p class="dimline" title="${esc(p.dims)}">📏 ${esc(p.dims)}</p>` : ''}${p.variants ? `<p class="vhint">${vHint(p)} available</p>` : ''}
       <div class="price-row"><div class="price">${p.variants && p.variants.opts.some(o => o.add > 0) ? '<small style="display:inline;margin-right:4px">from</small>' : ''}${eur(p.price)}${isB(p) && p.extra.length === 0 ? `<span class="old">separately ${eur(p.single)}</span>` : ''}<small>incl. VAT, plus shipping</small></div>
-      ${p.variants ? `<a class="btn btn-primary btn-sm" href="product.html?id=${p.id}" aria-label="Choose options: ${p.name}">Choose options</a>` : `<button type="button" class="btn btn-primary btn-sm" data-act="add" data-id="${p.id}" aria-label="Add to cart: ${p.name}">Add to cart</button>`}</div></div></article>`;
+      ${p.variants ? `<a class="btn btn-primary btn-sm" href="product.html?id=${esc(p.id)}" aria-label="Choose options: ${esc(p.name)}">Choose options</a>` : `<button type="button" class="btn btn-primary btn-sm" data-act="add" data-id="${esc(p.id)}" aria-label="Add to cart: ${esc(p.name)}">Add to cart</button>`}</div></div></article>`;
 }
 function bundleCard(b) {
   const icons = [...b.items.map(byId).map(x => pic(x, 'ic')), ...b.extra.map(e => art(e.art))].join('');
   const sv = bSave(b);
-  return `<div class="bundle${sv ? ' has-save' : ''}"><span class="eyebrow">Bundle</span>${sv ? `<span class="save-pill big">${saveTxt(sv)}</span>` : ''}<h3>${b.name}</h3>
+  return `<div class="bundle${sv ? ' has-save' : ''}"><span class="eyebrow">Bundle</span>${sv ? `<span class="save-pill big">${saveTxt(sv)}</span>` : ''}<h3>${esc(b.name)}</h3>
    <div class="icons">${icons}</div>
-   <ul>${b.feat.map(f => `<li>${f}</li>`).join('')}</ul>
+   <ul>${b.feat.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
    <div class="price-row"><div class="price">${eur(b.price)} <small>incl. VAT · items bought separately: ${eur(b.single)}${b.extra.length ? ' + bundle extra' : ''}</small></div></div>
-   <div class="buy-row"><button type="button" class="btn btn-primary" data-act="add" data-id="${b.id}" aria-label="Grab the bundle: ${b.name}">Grab the bundle</button><a class="btn btn-ghost" href="product.html?id=${b.id}" aria-label="Details: ${b.name}">Details</a></div></div>`;
+   <div class="buy-row"><button type="button" class="btn btn-primary" data-act="add" data-id="${esc(b.id)}" aria-label="Grab the bundle: ${esc(b.name)}">Grab the bundle</button><a class="btn btn-ghost" href="product.html?id=${esc(b.id)}" aria-label="Details: ${esc(b.name)}">Details</a></div></div>`;
 }
 const SHIP_TXT = `<b>Delivery time: approx. 7–15 business days</b> within the EU. Orders ship directly from our partner warehouse – it takes a little longer, but keeps prices fair. Tracking information is planned for when real orders start (demo store – no orders are processed yet).`;
 
@@ -688,7 +701,7 @@ const matches = (p, c) => c === 'All' || groupOf(p) === c || p.cat === c;
 function catRow(link) {
   const chip = (k, en) => link
     ? `<a class="chip" href="products.html#${encodeURIComponent(k)}">${en}</a>`
-    : `<button type="button" class="chip" data-c="${k}" aria-pressed="false">${en}</button>`;
+    : `<button type="button" class="chip" data-c="${esc(k)}" aria-pressed="false">${en}</button>`;
   return `<div class="catrow" role="group" aria-label="Categories">${link ? '' : chip('All', 'All')}${GROUPS.map(g => chip(g.k, g.en)).join('')}</div>`;
 }
 
@@ -696,7 +709,7 @@ function dealStrip() {
   const best = BUNDLES.filter(bSave).sort((a, b) => bSave(b).amt - bSave(a).amt)[0];
   if (!best) return '';
   const from = Math.min(...BUNDLES.map(b => b.price));
-  return `<div class="wrap"><a class="deal-strip" href="#bundles"><span class="ds-ic" aria-hidden="true">🎁</span><span class="ds-t"><b>Bundle deals</b> – from ${eur(from)}. ${best.name}: ${eur(best.price)} instead of ${eur(best.single)} for the items bought separately – <b class="ds-save">${saveTxt(bSave(best))}</b>.</span><span class="ds-cta">See bundles →</span></a></div>`;
+  return `<div class="wrap"><a class="deal-strip" href="#bundles"><span class="ds-ic" aria-hidden="true">🎁</span><span class="ds-t"><b>Bundle deals</b> – from ${eur(from)}. ${esc(best.name)}: ${eur(best.price)} instead of ${eur(best.single)} for the items bought separately – <b class="ds-save">${saveTxt(bSave(best))}</b>.</span><span class="ds-cta">See bundles →</span></a></div>`;
 }
 function catTiles() {
   return `<div class="cat-tiles">${GROUPS.map(g => { const items = ALL.filter(p => matches(p, g.k)); const p = items.find(x => !x.noimg) || items[0]; return p ? `<a class="cat-tile" href="products.html#${encodeURIComponent(g.k)}">${pic(p)}<span class="cn">${g.en}</span><span class="cc">${items.length} items</span></a>` : ''; }).join('')}</div>`;
@@ -713,8 +726,8 @@ function pageHome() {
       <div class="hero-facts"><span>14-day right of withdrawal</span><span>Shipping across the EU</span><span>Demo store – no real orders yet</span></div>
     </div>
     <div class="hero-art">
-      <div class="hero-main">${pic(byId('magnetic-phone-mount'), 'hero', true)}<span class="hero-tag"><small>Bestseller</small><b>${byId('magnetic-phone-mount').name}</b><span>${eur(byId('magnetic-phone-mount').price)}</span></span></div>
-      ${['dog-car-seat-cover','backseat-organizer-tray','umbrella-windshield-sunshade'].map((id, i) => { const x = byId(id); return `<a class="hero-float f${i + 1}" href="product.html?id=${x.id}" aria-label="${x.name} – ${eur(x.price)}">${pic(x)}<span>${eur(x.price)}</span></a>`; }).join('')}
+      <div class="hero-main">${pic(byId('magnetic-phone-mount'), 'hero', true)}<span class="hero-tag"><small>Bestseller</small><b>${esc(byId('magnetic-phone-mount').name)}</b><span>${eur(byId('magnetic-phone-mount').price)}</span></span></div>
+      ${['dog-car-seat-cover','backseat-organizer-tray','umbrella-windshield-sunshade'].map((id, i) => { const x = byId(id); return `<a class="hero-float f${i + 1}" href="product.html?id=${esc(x.id)}" aria-label="${esc(x.name)} – ${eur(x.price)}">${pic(x)}<span>${eur(x.price)}</span></a>`; }).join('')}
       <span class="blob b1" aria-hidden="true"></span><span class="blob b2" aria-hidden="true"></span>
     </div>
   </div></section>
@@ -759,13 +772,13 @@ function pageShop() {
       const g = GROUPS.find(x => x.k === c || x.cats.includes(c));
       document.querySelectorAll('#catmain .chip').forEach(b => { const on = b.dataset.c === (g ? g.k : 'All'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
       const sub = document.getElementById('subrow');
-      sub.innerHTML = (g && g.k === 'Car') ? ['Car', ...CAR_SUBS].map(k => `<button type="button" class="chip" data-c="${k}" aria-pressed="false">${k === 'Car' ? 'All car' : k === 'Bundle' ? 'Bundles' : k}</button>`).join('') : '';
+      sub.innerHTML = (g && g.k === 'Car') ? ['Car', ...CAR_SUBS].map(k => `<button type="button" class="chip" data-c="${esc(k)}" aria-pressed="false">${k === 'Car' ? 'All car' : k === 'Bundle' ? 'Bundles' : k}</button>`).join('') : '';
       sub.querySelectorAll('.chip').forEach(b => { const on = b.dataset.c === c; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.onclick = () => go(b.dataset.c); });
       document.getElementById('pcount').textContent = ALL.filter(p => matches(p, c)).length + ' items';
       const ttl = document.getElementById('ptitle'); const nm = c === 'All' ? '' : (c === 'Car' ? 'Car' : (c === 'Bundle' ? 'Bundles' : (g && g.k !== 'Car' ? (g.en || g.k) : c)));
       const ct = window.fdCatTitle ? window.fdCatTitle(c, c === 'SG' ? 'GYM' : nm) : null;
       ttl.classList.toggle('is-sg', c === 'SG' && !ct); ttl.classList.toggle('is-ct', !!ct);
-      ttl.innerHTML = ct || (c === 'SG' ? '<img class="gym-logo" src="assets/gym-logo.png" alt="GYM" width="900" height="320">' : (nm ? '<b>' + nm + '</b>' : 'All <b>products</b>'));
+      ttl.innerHTML = ct || (c === 'SG' ? '<img class="gym-logo" src="assets/gym-logo.png" alt="GYM" width="900" height="320">' : (nm ? '<b>' + esc(nm) + '</b>' : 'All <b>products</b>'));
       if (c === 'SG' && !ct) ttl.setAttribute('aria-label', 'GYM'); else ttl.removeAttribute('aria-label');
       if (ct && window.fdCatTitleFit) window.fdCatTitleFit(ttl);
       const n = ALL.filter(p => matches(p, c)).length, label = c === 'All' ? 'All products' : (c === 'SG' ? 'GYM' : nm || c);
@@ -795,26 +808,26 @@ function pageProduct() {
   const careNote = p.cat === 'Car Care' ? '<li>Wash new microfibre before first use; wash separately, without fabric softener. Test brushes on a hidden spot first.</li>' : '';
   const comfortNote = ['neck-pillow','neck-lumbar-set'].includes(p.id) ? '<li>Must not restrict head-restraint function or seat-belt routing. Comfort product – not a medical device.</li>' : '';
   const sunWarn = p.id === 'umbrella-windshield-sunshade' ? '<li>Use only when the vehicle is parked. Remove completely before driving.</li>' : '';
-  return `<div class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><a href="shop.html">Home</a> / <a href="products.html">Products</a> / <span aria-current="page">${p.name}</span></nav>
+  return `<div class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><a href="shop.html">Home</a> / <a href="products.html">Products</a> / <span aria-current="page">${esc(p.name)}</span></nav>
   <div class="pd">
     <div><div class="gallery">${pic(p, '', true)}</div><p class="photo-note">Illustrative AI-generated image – final product photos to follow.</p></div>
     <div>
-      ${p.badge ? `<span class="eyebrow">${p.badge}</span>` : ''}
-      <h1>${isB(p) ? 'Bundle: ' : ''}${p.name}</h1>
-      <p style="color:var(--muted);font-size:17px;margin:0 0 16px">${p.short}</p>
+      ${p.badge ? `<span class="eyebrow">${esc(p.badge)}</span>` : ''}
+      <h1>${isB(p) ? 'Bundle: ' : ''}${esc(p.name)}</h1>
+      <p style="color:var(--muted);font-size:17px;margin:0 0 16px">${esc(p.short)}</p>
       ${bSave(p) ? `<span class="save-pill big pd-save">${saveTxt(bSave(p))} vs. buying the items separately</span>` : ''}
       <div class="price" id="pprice">${eur(p.price)}${isB(p) ? ` <span class="old" style="text-decoration:none">items bought separately ${eur(p.single)}${p.extra.length ? ' + bundle extra' : ''}</span>` : ''}</div>
       <div class="meta">incl. VAT, plus <a href="shipping.html">shipping</a> · SKU ${PH('SKU')}</div>
-      ${p.dims ? `<div class="dims"><b>Dimensions:</b> <span id="dimtxt">${dimsOf(p, window.selV)}</span><small>Typical size - exact specification to be confirmed with the supplier.</small></div>` : ''}
-      ${p.variants ? `<div class="vsel"><div class="vlab"><b>${p.variants.label}:</b> <span id="vname">${p.variants.opts[0].n}</span></div><div class="vopts">${p.variants.opts.map((o, i) => `<button type="button" class="chip vopt ${i === 0 ? 'on' : ''}" data-v="${o.id}" data-act="variant" aria-pressed="${i === 0}">${o.n}${o.add ? ` (+${eur(o.add)})` : ''}</button>`).join('')}</div></div>` : ''}
+      ${p.dims ? `<div class="dims"><b>Dimensions:</b> <span id="dimtxt">${esc(dimsOf(p, window.selV))}</span><small>Typical size - exact specification to be confirmed with the supplier.</small></div>` : ''}
+      ${p.variants ? `<div class="vsel"><div class="vlab"><b>${esc(p.variants.label)}:</b> <span id="vname">${p.variants.opts[0].n}</span></div><div class="vopts">${p.variants.opts.map((o, i) => `<button type="button" class="chip vopt ${i === 0 ? 'on' : ''}" data-v="${esc(o.id)}" data-act="variant" aria-pressed="${i === 0}">${esc(o.n)}${o.add ? ` (+${eur(o.add)})` : ''}</button>`).join('')}</div></div>` : ''}
       <div class="buy-row">
         <div class="qty"><button type="button" data-act="pdq" data-d="-1" aria-label="Decrease quantity">−</button><input id="q" value="1" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="Quantity"><button type="button" data-act="pdq" data-d="1" aria-label="Increase quantity">+</button></div>
-        <button type="button" class="btn btn-primary" style="flex:1" data-act="pdadd" data-id="${p.id}">Add to cart</button>
+        <button type="button" class="btn btn-primary" style="flex:1" data-act="pdadd" data-id="${esc(p.id)}">Add to cart</button>
       </div>
       <div class="ship-box">📦 ${SHIP_TXT}<br>🚚 <b>Free shipping over €39</b> (order subtotal)<br>↩️ <b>14-day right of withdrawal</b> – <a href="withdrawal.html">details</a></div>
-      <ul class="feat">${p.feat.map(f => `<li>${f}</li>`).join('')}</ul>
+      <ul class="feat">${p.feat.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
       <details class="acc" open><summary>Product details</summary><div class="in">
-        Material: ${PH('confirm with supplier')}<br>Dimensions / weight: ${PH('confirm with supplier')}<br>${p.variants ? p.variants.label + ' options: ' + p.variants.opts.map(o => o.n).join(', ') : 'Colour: ' + PH('e.g. black')}<br>In the box: ${isB(p) ? p.feat.join(', ') : PH('contents')}<br>Compatibility: universal – please check the dimensions against your vehicle.</div></details>
+        Material: ${PH('confirm with supplier')}<br>Dimensions / weight: ${PH('confirm with supplier')}<br>${p.variants ? esc(p.variants.label) + ' options: ' + p.variants.opts.map(o => esc(o.n)).join(', ') : 'Colour: ' + PH('e.g. black')}<br>In the box: ${isB(p) ? p.feat.map(esc).join(', ') : PH('contents')}<br>Compatibility: universal – please check the dimensions against your vehicle.</div></details>
       <details class="acc"><summary>Safety information</summary><div class="in"><ul style="margin:0;padding-left:18px">${magnetWarn}${mountWarn}${sunWarn}${careNote}${comfortNote}<li>Secure loads and accessories so nothing flies around under hard braking.</li><li>${PH('Further warnings and safety information from the manufacturer')}</li></ul></div></details>
       <details class="acc"><summary>Manufacturer & responsible person (GPSR)</summary><div class="in">
         Information pursuant to Regulation (EU) 2023/988 on general product safety:
@@ -852,7 +865,7 @@ function shipBar(sub) {
 }
 function promoBox(code) {
   return code
-    ? `<div class="promo on"><span>🎉 Code <b>${code}</b> applied – 10% off your subtotal.</span><button type="button" class="promo-rm" data-act="promorm">Remove</button></div>`
+    ? `<div class="promo on"><span>🎉 Code <b>${esc(code)}</b> applied – 10% off your subtotal.</span><button type="button" class="promo-rm" data-act="promorm">Remove</button></div>`
     : `<form class="promo" data-promo novalidate><label for="promo-in">Discount code</label><div class="promo-row"><input id="promo-in" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. WELCOME10"><button type="submit" class="btn btn-ghost btn-sm">Apply</button></div><p class="promo-msg" aria-live="polite"></p></form>`;
 }
 function newsletter() {
@@ -883,8 +896,8 @@ function renderCart() {
   const c = Cart.get(), ids = Object.keys(c), box = document.getElementById('cartbox');
   if (!ids.length) { box.innerHTML = `<div class="empty"><div style="font-size:60px" aria-hidden="true">🛒</div><h2 style="color:var(--text);font-size:24px">Nothing here yet.</h2><p>Your cart is empty. Have a look around.</p><a class="btn btn-primary" href="products.html">Shop products</a></div>`; return; }
   const sub = cartSubtotal(c), code = Promo.get(), disc = code ? Promo.discount(sub) : 0, free = sub >= FREE_SHIP;
-  box.innerHTML = `<div class="cart-layout" style="padding-top:0"><div>${ids.map(id => { const {p, v} = splitKey(id); const up = unitPrice(p, v); const nm = (isB(p) ? 'Bundle: ' : '') + p.name + (v ? ' (' + v.n + ')' : ''); return `
-    <div class="line">${pic(p, 'sm')}<div><h2 class="lt">${isB(p) ? 'Bundle: ' : ''}${p.name}</h2>${v ? `<div class="vline">${p.variants.label}: ${v.n}</div>` : ''}<div style="color:var(--muted);font-size:14px">${eur(up)} each</div>
+  box.innerHTML = `<div class="cart-layout" style="padding-top:0"><div>${ids.map(id => { const {p, v} = splitKey(id); const up = unitPrice(p, v); const nm = esc((isB(p) ? 'Bundle: ' : '') + p.name + (v ? ' (' + v.n + ')' : '')); return `
+    <div class="line">${pic(p, 'sm')}<div><h2 class="lt">${isB(p) ? 'Bundle: ' : ''}${esc(p.name)}</h2>${v ? `<div class="vline">${esc(p.variants.label)}: ${esc(v.n)}</div>` : ''}<div style="color:var(--muted);font-size:14px">${eur(up)} each</div>
       <div class="qty" style="margin-top:8px"><button type="button" data-act="cartq" data-key="${id}" data-d="-1" aria-label="Decrease quantity of ${nm}">−</button><input value="${c[id]}" readonly aria-label="Quantity of ${nm}"><button type="button" data-act="cartq" data-key="${id}" data-d="1" aria-label="Increase quantity of ${nm}"${c[id] >= MAXQ ? ' disabled' : ''}>+</button></div>
       <br><button type="button" class="rm" data-act="cartrm" data-key="${id}" aria-label="Remove: ${nm}">Remove</button></div>
       <div class="price">${eur(up * c[id])}</div></div>`; }).join('')}</div>
