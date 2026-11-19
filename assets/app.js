@@ -731,7 +731,7 @@ function pageHome() {
       <span class="blob b1" aria-hidden="true"></span><span class="blob b2" aria-hidden="true"></span>
     </div>
   </div></section>
-  <div class="usp-bar"><div class="wrap"><span>↩️ 14-day right of withdrawal</span><span>📦 Shipping across the EU · approx. 7–15 business days</span><span>🚚 Free shipping over €39</span><span>💶 Prices incl. VAT</span><span>🎁 Bundles: cheaper together</span></div></div>
+  <div class="usp-bar"><div class="wrap" tabindex="0" role="region" aria-label="Shop information"><span>↩️ 14-day right of withdrawal</span><span>📦 Shipping across the EU · approx. 7–15 business days</span><span>🚚 Free shipping over €39</span><span>💶 Prices incl. VAT</span><span>🎁 Bundles: cheaper together</span></div></div>
   ${dealStrip()}
   <div class="marquee" aria-hidden="true"><div>${Array(2).fill('<span>Home</span>★<span>Kitchen</span>★<span>Pets</span>★<span>Office</span>★<span>Tools</span>★<span>Car</span>★<span>FreshDrop</span>★').join('')}</div></div>
   <section class="block" style="padding-bottom:0"><div class="wrap">
