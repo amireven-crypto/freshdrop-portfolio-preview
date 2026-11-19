@@ -869,19 +869,19 @@ function promoBox(code) {
     : `<form class="promo" data-promo novalidate><label for="promo-in">Discount code</label><div class="promo-row"><input id="promo-in" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. WELCOME10"><button type="submit" class="btn btn-ghost btn-sm">Apply</button></div><p class="promo-msg" aria-live="polite"></p></form>`;
 }
 function newsletter() {
-  let saved = null; try { saved = JSON.parse(localStorage.getItem(NEWS_KEY)); } catch (e) {}
-  return `<section class="news" aria-labelledby="news-h"><div class="wrap"><div class="news-card">${saved && saved.email ? newsDone() : `
+  let saved = null; try { saved = JSON.parse(localStorage.getItem(NEWS_KEY)); if (saved && saved.email) { saved = {done: true, t: saved.t}; localStorage.setItem(NEWS_KEY, JSON.stringify(saved)); } } catch (e) {}
+  return `<section class="news" aria-labelledby="news-h"><div class="wrap"><div class="news-card">${saved && saved.done ? newsDone() : `
     <span class="eyebrow">Newsletter</span><h2 id="news-h">Get <b>10% off</b> your first order.</h2>
     <p class="news-lead">Sign up for new finds and bundle deals from FreshDrop.</p>
     <form class="news-form" data-news novalidate><label class="sr" for="news-email">Email address</label><input id="news-email" type="email" name="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required><button type="submit" class="btn btn-primary">Get my 10%</button></form>
     <p class="news-msg" aria-live="polite"></p>
-    <p class="news-note">Demo store: no emails are sent. Your address is only saved in this browser (localStorage) and never leaves your device.</p>`}</div></div></section>`;
+    <p class="news-note">Demo store: no emails are sent and your address is not stored anywhere, not even in this browser.</p>`}</div></div></section>`;
 }
 function newsDone() {
   return `<span class="eyebrow">Newsletter</span><h2 id="news-h">You're in! <b>Here's your 10%.</b></h2>
     <p class="news-lead">Use this code in your cart for 10% off your subtotal:</p>
     <div class="news-code"><b>${PROMO_CODE}</b><a class="btn btn-primary btn-sm" href="cart.html">Use it in the cart →</a></div>
-    <p class="news-note">Demo store: no email was sent and nothing was stored on a server – your address stays in this browser only.</p>`;
+    <p class="news-note">Demo store: no email was sent and your address was not stored – only a “signed up” flag in this browser.</p>`;
 }
 function updateMiniShip() {
   const sub = cartSubtotal(), left = Math.max(0, FREE_SHIP - sub), pct = Math.min(100, Math.round(sub / FREE_SHIP * 100));
@@ -961,7 +961,7 @@ document.addEventListener('submit', e => {
     e.preventDefault();
     const em = (f.email.value || '').trim(), msg = f.parentNode.querySelector('.news-msg');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em) || em.length > 254) { msg.textContent = 'Please enter a valid email address.'; f.email.setAttribute('aria-invalid', 'true'); f.email.focus(); return; }
-    try { localStorage.setItem(NEWS_KEY, JSON.stringify({email: em, t: Date.now()})); } catch (err) {}
+    try { localStorage.setItem(NEWS_KEY, JSON.stringify({done: true, t: Date.now()})); } catch (err) {}
     const card = f.closest('.news-card'); card.innerHTML = newsDone(); card.classList.add('done');
     const h = card.querySelector('h2'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({preventScroll: true}); }
   }
